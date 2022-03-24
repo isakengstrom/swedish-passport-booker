@@ -1,0 +1,18 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobs.timer-booker.Disabled": false,
+    "LOCAL_DEV": true,
+    "DRIVER": "chrome",
+    "CHROMEWEBDRIVER": "<PATH_TO_CHROME_DRIVER>",
+    
+    "bookingEmail": "<BOOKING_EMAIL_HERE>",
+    "bookingId": "<BOOKING_ID_HERE>",
+
+    "devEmailAddress":"<NOTIFICATION_SENDER_EMAIL_ADDRESS>",
+    "devEmailPassword": "<NOTIFICATION_SENDER_EMAIL_PASSWORD>",
+    "notificationEmailAddress": "<NOTIFICATION_RECEIVER_EMAIL_ADDRESS>"
+  }
+}
