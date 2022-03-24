@@ -11,7 +11,6 @@ E.g. if you have a booked time in the *Stockholm* region, at the *Solna* expedit
 This is a Python Azure Functions project. If you know how to get it started, you can run the booker as either an HttpTrigger, or a TimerTrigger. Otherwise, you can create a new python file and call the booker from there.  
 
 > **Note:** Make sure to not ping the website at too high a speed, if running the booker in a loop. Setting up wait statements is a good idea.
-You'll need to change  
 
 Have a look in the [config.py](/src/config.py) to see all the settings you'll need to set up. This will also guide you to the [local.settings.example.json](/src/local.settings.example.json), which will need to be filled in and renamed to *local.settings.json* if you're running the booker as an Azure Functions project.  If you're not running it in this way, you'll need to get the environment variables into the runtime in some other way. 
 
