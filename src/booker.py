@@ -10,9 +10,8 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException, TimeoutException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import Select
 from email_alert import send_booking_update_email
@@ -29,25 +28,18 @@ def is_earlier_than_currently_booked(compare_date:datetime, current_date: dateti
 def is_post_forsight(compare_date:datetime, foresight: int) -> bool:
     return datetime.today().date() + timedelta(days=foresight) < compare_date.date()
 
-class Driver(Enum):
-    CHROME = 0
-    FIREFOX = 1
-
 @contextmanager
-def driver_context(drv):
-    if drv == Driver.CHROME:
-        options = Options()
-        options.headless = True
-        #if not os.environ["LOCAL_DEV"]:
-        #    options.binary_location = os.environ["CHROMEWEBDRIVER"]
-        
-        driver = webdriver.Chrome(os.environ["CHROMEWEBDRIVER"], options=options)
+def driver_context():
+    options = Options()
 
-    elif drv == Driver.FIREFOX:
-        raise NotImplementedError("Firefox is yet to be implemented/tested")
-        driver = webdriver.Firefox()
-    else:
-        raise ValueError('Unsupported driver')
+    # Running headless means there is no browser window 
+    options.headless = False
+    
+    # Add this disable option to remove basic detection of a webdriver
+    options.add_argument("--disable-blink-features")
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    driver = webdriver.Chrome(os.environ["CHROMEWEBDRIVER"], options=options)
+
     try:
         yield driver
     finally:
@@ -58,7 +50,9 @@ def booker(config:dict) -> None:
     try:
         start = time.time()
         time.sleep(random.uniform(0.02, .1))
-        timeout = 20
+        timeout = 5
+        max_wait_for_load = 1
+
 
         # Date formats
         datetime_format = '%Y-%m-%d %H:%M'
@@ -67,21 +61,27 @@ def booker(config:dict) -> None:
 
         start_date = datetime.strptime(config["bookingStartDate"], date_format)
         end_date = datetime.strptime(config['bookingEndDate'], date_format)
+
         booking_id = config["bookingId"]
         booking_email = config["bookingEmail"]
 
-        drv = Driver.CHROME # = Driver.FIREFOX if os.environ['DRIVER'].lower() == "firefox" else Driver.CHROME
-        with driver_context(drv) as driver:
+        with driver_context() as driver:
             driver.implicitly_wait(timeout)
+            
+            full_url = f"{config['URL']}{config['bookingCounty']}"
 
             # get website and wait for its elements to load
-            driver.get(f"{config['URL']}{config['bookingCounty'].lower()}/")
+            driver.get(full_url)
             booking_number_xpath = '//input[@id="BookingNumber"]'
-            WebDriverWait(driver, timeout).until(EC.visibility_of_element_located((By.XPATH, booking_number_xpath)))
-            
+
+            driver.implicitly_wait(0.3)
+            WebDriverWait(driver, max_wait_for_load).until(EC.visibility_of_element_located((By.XPATH, booking_number_xpath)))
+            driver.implicitly_wait(timeout)
+
             # Fill in re-booking forms and click to login
             driver.find_element_by_xpath(booking_number_xpath).send_keys(booking_id)
             driver.find_element_by_xpath('//input[@id="ContactInfo"]').send_keys(booking_email)
+
             driver.find_element_by_xpath('//input[@name="NextButtonID6"]').click()
 
             # Paths to Currently booked information
@@ -89,8 +89,10 @@ def booker(config:dict) -> None:
             booked_expedition_xpath = '//label[@for="BookedSectionName"]/parent::div/child::div[@class="controls"]/child::span[@class="control-freetext"]'
             
             # Wait for login
-            WebDriverWait(driver, timeout).until(EC.visibility_of_element_located((By.XPATH, booked_time_xpath)))
-            
+            driver.implicitly_wait(0.4)
+            WebDriverWait(driver, max_wait_for_load).until(EC.visibility_of_element_located((By.XPATH, booked_time_xpath)))
+            driver.implicitly_wait(timeout)
+
             # Extract the currently booked datetime 
             booked_time:str = driver.find_element_by_xpath(booked_time_xpath).text
             currently_booked_datetime:datetime = datetime.strptime(booked_time, datetime_format)
@@ -101,9 +103,10 @@ def booker(config:dict) -> None:
             # Click to move to, and then wait for booking page to load 
             driver.find_element_by_xpath('//input[@name="NextButtonID26"]').click()
             first_free_time_xpath = '//input[@name="TimeSearchFirstAvailableButton"]'
-            WebDriverWait(driver, timeout).until(EC.visibility_of_element_located((By.XPATH, first_free_time_xpath)))
-            
 
+            driver.implicitly_wait(3)
+            WebDriverWait(driver, max_wait_for_load).until(EC.visibility_of_element_located((By.XPATH, first_free_time_xpath)))
+        
             expedition_select_xpath = f"//select[@data-provider='#RegionId']"
             
             for expedition in config["bookingExpeditions"]:
@@ -119,36 +122,34 @@ def booker(config:dict) -> None:
                     if expedition in available_expeditions:
                         select.select_by_visible_text(expedition)
 
-                
                 # Clicks element to load the earliest available times, then wait for the earliest elements to load 
                 driver.find_element_by_xpath(first_free_time_xpath).click()
                 try:
-                    WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, f"//input[@id='datepicker' and not(@value='{currently_booked_datetime.strftime(date_format)}')]")))
+                    WebDriverWait(driver, max_wait_for_load).until(EC.presence_of_element_located((By.XPATH, f"//input[@id='datepicker' and not(@value='{currently_booked_datetime.strftime(date_format)}')]")))
                 except TimeoutException as e:
                     pass
-            
+
                 driver.implicitly_wait(1)
                 time_cells: List[WebElement] = driver.find_elements_by_xpath('//div[@data-function="timeTableCell" and not(@aria-label="Bokad")]') 
-                driver.implicitly_wait(timeout)
-
+        
                 if not time_cells:
                     continue
 
                 first_time_cell = time_cells[0]
-                time_cell_label = first_time_cell.get_attribute("aria-label")
+                earliest_available = first_time_cell.get_attribute("aria-label")
 
-                found_datetime = datetime.strptime(time_cell_label, datetime_format_long)
+                found_datetime = datetime.strptime(earliest_available, datetime_format_long)
                         
-                earliest_available = time_cell_label
                 if is_valid_date(found_datetime, currently_booked_datetime, start_date, end_date, config["bookingForesight"]):
                     first_time_cell.click()
                     driver.find_element_by_xpath('//input[@id="booking-next"]').click()
                     
-                    WebDriverWait(driver, timeout).until(EC.visibility_of_element_located((By.XPATH, "//input[@id='EmailAddress']")))
+                    WebDriverWait(driver, max_wait_for_load).until(EC.visibility_of_element_located((By.XPATH, "//input[@id='EmailAddress']")))
                     logging.warning(f"Re-booked to: {earliest_available} at {expedition}")
                     
                     if config["sendNotificationEmail"]:
-                        send_booking_update_email(earliest_available, booked_time, expedition, booked_expedition_name, booking_id, booking_email)
+                        notificationEmails = config["notificationEmails"]
+                        send_booking_update_email(earliest_available, booked_time, expedition, booked_expedition_name, booking_id, booking_email, notificationEmails)
                     
                     break
 
