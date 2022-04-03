@@ -28,7 +28,7 @@ This is a Python Azure Functions project. If you know how to get it started, you
 
 > **Note:** Make sure to not ping the website at too high a speed if running the booker in a loop. Setting up wait statements is a good idea.
 
-Have a look in the [config.py](/src/config.py) to see all the settings you'll need to set up. This will also guide you to the [local.settings.example.json](/src/local.settings.example.json) file, which will need to be filled in and renamed to *local.settings.json* if you're running the booker as an Azure Functions project. If you're not running it in this way, you'll need to get the environment variables into the runtime in some other way. 
+Have a look in the [config.py](/src/config.py) to see all the settings you'll need to set up. This will also guide you to the [local.settings.example.json](/src/local.settings.example.json) file, which will need to be filled in and renamed to *local.settings.json* if you're running the booker as an Azure Functions project. If you're not running it in this way, you'll need to get the environment variables into the runtime in some other way. All of the booking logic can be found in [booker.py](/src/booker.py) 
 
 You'd also need to install the packages in [requirements.txt](/src/requirements.txt), preferably in a virtual or Conda environment. 
 
