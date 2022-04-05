@@ -1,8 +1,14 @@
 # Passport Appointment Booker (Somewhat deprecated)
 **With recent updates to [The booking site](https://bokapass.nemoq.se/Booking/Booking/Index/stockholm), it's made quite clear that they don't want scripts/bots to book appointments (by them adding CAPTCHAs and other things..). With that said, this script's focus is a bit niche compared to others I've seen. Compared to booking a new appointment from scratch, this script works by RE-BOOKING an already (manually) booked appointment, requiring fewer clicks (for Selenium) and no bypassing of CAPTCHAs. So if you can circumvent the other blockers on the site, this might be a good option for you. However, as the script has fulfilled its purpose, together with the morally gray area of this whole ordeal, no further updates will be provided. Feel free to use this however you'd like though (under the terms of the MIT licence).**     
 
-
 > **Note:** Running this script is at your **OWN RISK**. At the time of creating it, nothing has been issued about it being illegal, but it has been described as morally reprehensible by the police, see [source](https://www.svt.se/nyheter/lokalt/stockholm/svart-att-fa-tid-for-nytt-pass-i-stockholm-sa-fick-han-tid-snabbare?fbclid=IwAR2r1q1NWRMq20tXuznfwP69LtV1La3B4-B96FLu0RXp1bMHQoP93MC-fls). For your own sake, make sure to be updated on what the police say, and the terms of service on the site.      
+
+## Other projects:
+You are probebly better off trying one of the following solutions:
+- [pass-fur-alle](https://github.com/jonkpirateboy/Pass-fur-alle) by @jonkpirateboy
+- [passport-appointment-bot](https://github.com/kalkih/passport-appointment-bot) by @kalkih
+- [passport_booker_se](https://github.com/elias123tre/passport_booker_se) by @elias123tre
+
 ---
 ## How it works
 
